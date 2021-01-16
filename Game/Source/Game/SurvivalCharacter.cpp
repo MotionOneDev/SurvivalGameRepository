@@ -2,12 +2,31 @@
 
 
 #include "SurvivalCharacter.h"
+#include "SurvivalController.h"
+#include "Blueprint/UserWidget.h"
 
 // Sets default values
 ASurvivalCharacter::ASurvivalCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	ASurvivalController* SurvivalController = Cast<ASurvivalController>(Controller);
+	
+	//Child actor class definitions
+	CharacterMesh = CreateDefaultSubobject<USkeletalMeshComponent>("CharacterMesh");
+	CameraSpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
+	PlayerCamera = CreateDefaultSubobject<UCameraComponent>("Camera");
+	CharacterMesh->SetupAttachment(RootComponent);
+
+	// Spring Arm setup
+	CameraSpringArm->SetupAttachment(CharacterMesh);
+	CameraSpringArm->SetRelativeLocation(FVector(-30.f, 0.f, 150.f));
+	CameraSpringArm->bUsePawnControlRotation = true;
+	CameraSpringArm->TargetArmLength = 200.f;
+
+	PlayerCamera->SetupAttachment(CameraSpringArm);
+
 }
 
 // Called when the game starts or when spawned
@@ -34,6 +53,32 @@ void ASurvivalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAxis("LookRight", this, &ASurvivalCharacter::LookRight);
 	// Bind Player Movement Action Controls
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	// Bind Player Widget Controls
+	PlayerInputComponent->BindAction("PauseMenu", IE_Pressed, this, &ASurvivalCharacter::OpenPauseMenu);
+
+	// TEST BINDING
+	PlayerInputComponent->BindAction("AddXP", IE_Pressed, this, &ASurvivalCharacter::AddExperience);
+}
+
+void ASurvivalCharacter::OpenPauseMenu()
+{
+	ASurvivalController* SurvivalController = Cast<ASurvivalController>(Controller);
+
+	if (SurvivalController->bPauseMenuOpen == false)
+	{
+		SurvivalController->OpenPauseMenu();
+	}
+	else
+	{
+		SurvivalController->ClosePauseMenu();
+	}
+}
+
+void ASurvivalCharacter::AddExperience()
+{
+	ASurvivalController* SurvivalController = Cast<ASurvivalController>(Controller);
+
+	SurvivalController->AddExperience();
 }
 
 void ASurvivalCharacter::MoveForward(float AxisValue)
